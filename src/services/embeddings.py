@@ -38,7 +38,8 @@ class Embedder:
 class Firestore:
     def __init__(self, credential):
         self.credential = credential
-        firebase_admin.initialize_app(self.credential)
+        # call once
+        # firebase_admin.initialize_app(self.credential)
         self.db = firestore.client()
     
     def save_to_collection(self, collection_name, embedding):
@@ -49,7 +50,16 @@ class Firestore:
         collection = self.db.collection(COLLECTION_NAME)
         collection.add(doc)
 
+    def retrieve_by_location(self, location):
+        collection = self.db.collection(COLLECTION_NAME)
+        query = collection.where("location", "==", location).get()
+        return [query.to_dict() for query in query]
+
+
+
+
 if __name__ == "__main__":
+
     texts = [
         "What is the meaning of life?",
         "What is the purpose of existence?",
@@ -59,3 +69,7 @@ if __name__ == "__main__":
 
     embed = Embedder("gemini-embedding-001")
     embedding = embed.embed_content(texts)
+    store = Firestore(cred)
+    store.save_to_collection("mars", embedding)
+    print(store.retrieve_by_location("mars"))
+
