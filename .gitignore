@@ -2,3 +2,5 @@
 *__pycache__*
 .env
 src/services/cert.json
+src/__pycache__/models.cpython-311.pyc
+src/.env
