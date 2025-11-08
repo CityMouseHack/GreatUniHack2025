@@ -1,45 +1,13 @@
-import os
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
+from init_db import app, login_manager, db
+from database import User, Message
+
 from sqlalchemy import or_
-from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
-from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
+from flask_login import login_user, logout_user, current_user, login_required
+from flask import render_template, request, redirect, url_for, flash
 
-# App initialization
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'a_very_secret_key' # Replace with a real secret key
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Extensions
-db = SQLAlchemy(app)
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
-
-# Models
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), unique=True, nullable=False)
-    password_hash = db.Column(db.String(150), nullable=False)
-    
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-class Message(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, server_default=db.func.now())
-
-    sender = db.relationship('User', foreign_keys=[sender_id])
-    recipient = db.relationship('User', foreign_keys=[recipient_id])
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -164,8 +132,3 @@ def chat(username):
 
     return render_template('chat.html', title=f'Chat with {username}',
                            form=form, partner=partner, messages=messages)
-
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True)
