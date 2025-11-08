@@ -110,7 +110,7 @@ def profile():
 
 @app.route('/conversations')
 def conversations():
-    loggedin=False
+    loggedin=True
 
     user_ids = []
     converstion_list = get_as_list("conversations")
@@ -185,7 +185,7 @@ def chat(username):
     messages = chat_list
 
     return render_template('chat.html', title=f'Chat with {username}',
-                           form=form, partner=partner, messages=messages)
+                           form=form, partner=partner, messages=messages,loggedin=True)
 
 
 def get_as_list(path):
