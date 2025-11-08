@@ -4,3 +4,5 @@ Flask-Login
 Flask-WTF
 Werkzeug
 google-genai
+firebase-admin-firestore
+firebase-admin
