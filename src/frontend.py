@@ -1,4 +1,4 @@
-from init_db import app, login_manager, db, socketio
+from init_db import app, login_manager, db, socketio, embedder, firestore
 from database import User, Message
 
 from sqlalchemy import or_
@@ -126,6 +126,12 @@ def chat(username):
                       content=form.message.data)
         db.session.add(msg)
         db.session.commit()
+
+        # save message as a vector embedding
+        embedding = embedder.embed_content(form.message.data, "RETRIEVAL_DOCUMENT")
+        firestore.save_to_collection("mars", embedding)
+
+
 
         print(f"broadcasting message {partner.id}, {current_user.id}")
         # Notify receiver instantly
