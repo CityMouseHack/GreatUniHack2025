@@ -20,7 +20,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 try:
     app = firebase_admin.get_app()
 except ValueError as e:
-    cred = credentials.Certificate('/home/george/GreatUniHack/GreatUniHack2025/src/services/space-mouse-4803e-firebase-adminsdk-fbsvc-98226ecde3.json')
+    cred = credentials.Certificate('services/cert.json')
     firebase_admin.initialize_app(cred)
 
 # Extensions
