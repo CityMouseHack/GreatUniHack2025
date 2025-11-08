@@ -61,12 +61,12 @@
 
   const socket = io();
 
-  socket.emit('join', {username:"{{current_user.id}}"});
+  socket.emit('join', {username:"{{partner.id}}"});
 
   socket.on('receive_message', (data) => {
     console.log( data );
     
-    if (data.sender == "{{partner.username}}") {
+    if (data.sender == "{{partner.id}}") {
       const li = document.createElement('li');
       li.innerHTML = 
        `<div class="message received">

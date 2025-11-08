@@ -7,7 +7,7 @@ from wtforms import StringField, PasswordField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
 from flask_login import login_user, logout_user, current_user, login_required
 from flask import render_template, request, redirect, url_for, flash
-from flask_socketio import emit
+from flask_socketio import emit,leave_room,join_room
 
 import chat_socket
 
@@ -127,13 +127,13 @@ def chat(username):
         db.session.add(msg)
         db.session.commit()
 
-        print(f"broadcasting message {partner.id}, {current_user.id}")
+        print(f"broadcasting message: {form.message.data} from {current_user.id} to {partner.id}")
         # Notify receiver instantly
         socketio.emit('receive_message', {
             'sender': current_user.id,
             'text': form.message.data,
             'timestamp': msg.timestamp.strftime('%Y-%m-%d %H:%M')
-        }, room=partner.id)
+        }, to="abc")
 
         print("broadcasted")
     

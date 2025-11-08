@@ -1,21 +1,29 @@
 from init_db import socketio, db
-from flask_socketio import join_room, emit
+from flask_socketio import join_room, leave_room
 from database import Message
 
 from flask_login import current_user
 
 @socketio.on('connect')
 def handle_connect():
+    if current_user.is_authenticated:
+        # join_room(current_user.id)
+        # print(f"{current_user.id} joined their room")
+        join_room("abc")
     print("Client connected")
 
 @socketio.on('join')
 def handle_join(data):
     if current_user.is_authenticated:
-        username = data['username']
-        join_room(username)
-        print(f"{username} joined their room")
+        # leave_room(current_user.id)
+        # print(f"{current_user.id} left room {current_user.id}")
+        # username = data['username']
+        # join_room(username)
+        print(f"{current_user.id} joined room abc")
+        join_room("abc")
     else:
         return False
+
 
 # @socketio.on('send_message')
 # def handle_send_message(data):
