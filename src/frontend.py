@@ -127,13 +127,13 @@ def chat(username):
         db.session.add(msg)
         db.session.commit()
 
-        print(f"broadcasting message: {form.message.data} from {current_user.id} to {partner.id}")
+        print(f"broadcasting message {partner.id}, {current_user.id}")
         # Notify receiver instantly
         socketio.emit('receive_message', {
             'sender': current_user.id,
             'text': form.message.data,
             'timestamp': msg.timestamp.strftime('%Y-%m-%d %H:%M')
-        }, to="abc")
+        }, to=str(partner.id))
 
         print("broadcasted")
     

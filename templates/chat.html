@@ -61,7 +61,7 @@
 
   const socket = io();
 
-  socket.emit('join', {username:"{{partner.id}}"});
+  socket.emit('join', {username:"{{current_user.id}}"});
 
   socket.on('receive_message', (data) => {
     console.log( data );

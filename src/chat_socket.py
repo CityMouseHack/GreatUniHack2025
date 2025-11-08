@@ -6,21 +6,15 @@ from flask_login import current_user
 
 @socketio.on('connect')
 def handle_connect():
-    if current_user.is_authenticated:
-        # join_room(current_user.id)
-        # print(f"{current_user.id} joined their room")
-        join_room("abc")
     print("Client connected")
 
 @socketio.on('join')
 def handle_join(data):
     if current_user.is_authenticated:
-        # leave_room(current_user.id)
-        # print(f"{current_user.id} left room {current_user.id}")
-        # username = data['username']
-        # join_room(username)
-        print(f"{current_user.id} joined room abc")
-        join_room("abc")
+        leave_room(current_user.id)
+        print(f"{current_user.id} left room {current_user.id}")
+        username = data['username']
+        join_room(str(username))
     else:
         return False
 
