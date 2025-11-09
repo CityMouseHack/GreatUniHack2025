@@ -1,4 +1,4 @@
-<!-- The ENTIRE chat.html file with the updated script -->
+<!-- The ENTIRE chat.html file with the updated script and CSS -->
 {% extends "base.html" %}
 
 {% block content %}
@@ -20,10 +20,10 @@
         <form method="POST" action="" class="message-form" id="message-form">
             {{ form.hidden_tag() }}
             <div class="form-group">
-                {{ form.message(class="form-control", placeholder="Compose message...", id="message-input") }}
+                {{ form.message(class="form-control", placeholder="Compose message...", id="message-input", rows="1") }}
             </div>
             <button type="submit" class="btn-send" title="Transmit">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13L2 9L22 2Z" /><path d="M22 2L15 22L11 13" /></svg>
+                <svg xmlns="http://www.w.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13L2 9L22 2Z" /><path d="M22 2L15 22L11 13" /></svg>
             </button>
         </form>
     </div>
@@ -51,7 +51,6 @@
         const messageForm = document.getElementById('message-form');
         const messageInput = document.getElementById('message-input');
 
-        // This function handles the logic of sending the message
         function sendMessage() {
             const messageText = messageInput.value.trim();
             if (messageText) {
@@ -59,28 +58,29 @@
                     'message': messageText,
                     'conversation_id': conversationId
                 });
-                messageInput.value = ''; // Clear input after sending
+                messageInput.value = '';
+                // Reset height after sending
+                messageInput.style.height = 'auto';
             }
-            messageInput.focus(); // Keep focus on the input
+            messageInput.focus();
         }
 
-        // Listener for form submission (handles clicking the send button)
         messageForm.addEventListener('submit', function(e) {
-            e.preventDefault(); // Stop page refresh
+            e.preventDefault();
             sendMessage();
         });
 
-        // --- NEW: Listener for keyboard events in the text area ---
         messageInput.addEventListener('keydown', function(e) {
-            // Check if 'Enter' was pressed AND 'Shift' was NOT
             if (e.key === 'Enter' && !e.shiftKey) {
-                // Prevent the default action (which is to add a new line)
                 e.preventDefault();
-                // Call our send message function
                 sendMessage();
             }
-            // If Shift+Enter is pressed, we do nothing and allow the default
-            // newline behavior to happen.
+        });
+
+        // --- NEW: Auto-growing textarea ---
+        messageInput.addEventListener('input', () => {
+            messageInput.style.height = 'auto'; // Reset height to recalculate
+            messageInput.style.height = (messageInput.scrollHeight) + 'px'; // Set to content height
         });
 
 
@@ -124,14 +124,18 @@
 </script>
 
 
-<!-- Your original CSS remains unchanged -->
+<!-- ############ UPDATED CSS ############ -->
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-/* ... all of your existing styles go here ... */
+
 body {
     background-color: #0d0c1d;
     font-family: 'Orbitron', sans-serif;
     color: #d0d0d0;
+}
+
+#message-input {
+    width: 93%;
 }
 
 .chat-container {
@@ -217,7 +221,7 @@ body {
     clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 10% 100%, 0% 85%);
 }
 
-.message p { margin: 0; font-size: 0.9em; white-space: pre-wrap; } /* Added pre-wrap for newlines */
+.message p { margin: 0; font-size: 0.9em; white-space: pre-wrap; }
 
 .timestamp {
     font-size: 0.7em;
@@ -235,9 +239,14 @@ body {
     background: rgba(13, 12, 29, 0.5);
 }
 
-.message-form { display: flex; align-items: center; }
+/* --- MODIFIED --- */
+.message-form { 
+    display: flex; 
+    align-items: flex-end; /* Aligns items to the bottom */
+}
 .form-group { flex-grow: 1; }
 
+/* --- MODIFIED --- */
 .form-control {
     width: 100%;
     padding: 12px 20px;
@@ -248,7 +257,9 @@ body {
     font-family: 'Orbitron', sans-serif;
     font-size: 0.9em;
     transition: all 0.3s ease;
-    resize: none; /* Good practice for chat inputs */
+    resize: none; /* Keep resize off for auto-grow */
+    max-height: 120px; /* Prevent it from growing too tall */
+    overflow-y: auto; /* Add scrollbar if max-height is reached */
 }
 .form-control::placeholder { color: #777; }
 .form-control:focus {
@@ -270,6 +281,7 @@ body {
     justify-content: center;
     transition: all 0.3s ease;
     animation: pulseGlow 3s infinite alternate;
+    flex-shrink: 0; /* Prevent the button from shrinking */
 }
 .btn-send:hover {
     background: #FFD700;
