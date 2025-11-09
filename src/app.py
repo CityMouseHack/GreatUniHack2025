@@ -221,6 +221,12 @@ def graph():
 
     return render_template('graph.html', chart_data=json.dumps(data))
 
+@app.route('/hover')
+def handle_hover_planet_event(location):
+    response = gemini.generate_response(firestore.generate_prompt(gemini, location))
+    return render_template('tourism_popup.html', location=location, response=response)
+
+
 @socketio.on('send_message')
 def handle_send_message_event(data):
     """
