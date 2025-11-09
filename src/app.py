@@ -198,7 +198,7 @@ def graph():
         {"name": "Peru", "color": "#32CD32"}
     ]
 
-    return render_template('graph.html', data=json.dumps(data))
+    return render_template('graph.html', chart_data=json.dumps(data))
 
 
 def get_as_list(path):
