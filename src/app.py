@@ -281,7 +281,7 @@ def graph():
         # {"name": "Peru", "color": "#32CD32"}
     # ]
 
-    return render_template('graph.html', chart_data=json.dumps(data))
+    return render_template('graph.html', chart_data=json.dumps(data), loggedin=("user" in session))
 
 @app.route('/hover/<name>', methods=["GET"])
 def handle_hover_planet_event(name):
