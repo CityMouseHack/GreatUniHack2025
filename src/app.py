@@ -221,9 +221,11 @@ def graph():
 
     return render_template('graph.html', chart_data=json.dumps(data))
 
-@app.route('/hover')
-def handle_hover_planet_event(location):
+@app.route('/hover/<name>',methods=["POST","GET"])
+def handle_hover_planet_event(name):
+    location=name
     response = gemini.generate_response(firestore.generate_prompt(gemini, location))
+    print(response)
     return render_template('tourism_popup.html', location=location, response=response)
 
 

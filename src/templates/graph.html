@@ -12,7 +12,7 @@
 </head>
 <body>
 
-    <canvas id="visualizationCanvas" width="800" height="600"></canvas>
+    <button onclick="callinfo()"><canvas id="visualizationCanvas" width="800" height="600"></canvas></button>
     <p>Click on the canvas to regenerate the layout.</p>
 
     <script>
@@ -255,10 +255,20 @@
                     ctx.fillStyle = gradient;
                     ctx.fill();
                     ctx.restore();
-
-                    ctx.restore();
+                    //hoveredPlanet.name has the name
                 }
             }
+
+            window.callinfo = function() {
+                if (hoveredPlanet) {
+                    var name = hoveredPlanet.name;
+                    console.log(name);
+                    //fetch("/hover",{method:"POST",headers: { "Content-Type": "application/json" },body:JSON.stringify({name:name})})
+                    window.location.href = `/hover/${encodeURIComponent(name)}`;
+                } else {
+                    console.log("No planet hovered.");
+                }
+            };
             
             // --- 6. INITIALIZATION ---
             let hoveredPlanet = null;
@@ -282,7 +292,7 @@
                 }
             }
 
-            canvas.addEventListener('click', generatePointPositions);
+            //canvas.addEventListener('click', generatePointPositions);
             canvas.addEventListener('mousemove', handleMouseMove);
         });
     </script>
