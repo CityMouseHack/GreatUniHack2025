@@ -314,8 +314,11 @@ def handle_send_message_event(data):
 
     # Convert to vector embedding and save to Firestore
     location = fbdb.reference("users/" + sender).get().get("location") 
-    embedding = gemini.embed_content(message_content, "RETRIEVAL_DOCUMENT")
-    firestore.save_to_collection(location.lower(), embedding, message_content) 
+    try:
+        embedding = gemini.embed_content(message_content, "RETRIEVAL_DOCUMENT")
+        firestore.save_to_collection(location.lower(), embedding, message_content) 
+    except:
+        pass
 
     # Broadcast the message to all clients in the room (including the sender)
     socketio.emit('new_message', new_message, room=conversation_id)
@@ -369,8 +372,11 @@ def handle_send_message_event(data):
     # Convert to vector embedding and save to Firestore
     sender_location_data = fbdb.reference(f"users/{sender_username}/location").get()
     if sender_location_data:
-        embedding = gemini.embed_content(message_content, "RETRIEVAL_DOCUMENT")
-        firestore.save_to_collection(sender_location_data, embedding, message_content)
+        try:
+            embedding = gemini.embed_content(message_content, "RETRIEVAL_DOCUMENT")
+            firestore.save_to_collection(sender_location_data.lower(), embedding, message_content) 
+        except:
+            pass
 
     # Broadcast the chat message to the chat room
     socketio.emit('new_message', new_message, room=conversation_id)
