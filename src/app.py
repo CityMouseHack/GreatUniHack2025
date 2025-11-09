@@ -32,9 +32,14 @@ URL=os.environ.get("URL")
 
 cred = credentials.Certificate(CRED)
 
-firebase_admin.initialize_app(cred, {
-    'databaseURL': URL
-})
+try:
+    app = firebase_admin.get_app()
+except ValueError as e:
+    cred = credentials.Certificate(CRED)
+    firebase_admin.initialize_app(cred, {
+        'databaseURL': URL
+    })
+
 
 ref = fbdb.reference('/')
 
@@ -219,7 +224,7 @@ def graph():
 @socketio.on('send_message')
 def handle_send_message_event(data):
     """
-    Handles a client sending a message. Saves it to Firebase and broadcasts it.
+    Handles a client sending a message. Saves it to Firestore and broadcasts it.
     """
     app.logger.info(f"Received message: {data}")
 
@@ -237,6 +242,11 @@ def handle_send_message_event(data):
     # Save to Firebase
     chats_ref = fbdb.reference("chats/" + conversation_id)
     chats_ref.push(new_message)
+
+    # Convert to vector embedding and save to Firestore
+    location = fbdb.reference("users/" + sender).get().get("location") 
+    embedding = gemini.embed_content(form.message.data, "RETRIEVAL_DOCUMENT")
+    firestore.save_to_collection(location, embedding, form.message.data)
 
     # Broadcast the message to all clients in the room (including the sender)
     socketio.emit('new_message', new_message, room=conversation_id)
