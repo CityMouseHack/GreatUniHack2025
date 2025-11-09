@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from init_db import app, login_manager, db, socketio, embedder, firestore
+=======
+from init_db import app, login_manager, db, gemini, firestore
+>>>>>>> a1c94e2 (Add text content and prompt generation)
 from database import User, Message
 
 from sqlalchemy import or_
@@ -128,7 +132,7 @@ def chat(username):
         db.session.commit()
 
         # save message as a vector embedding
-        embedding = embedder.embed_content(form.message.data, "RETRIEVAL_DOCUMENT")
+        embedding = gemini.embed_content(form.message.data, "RETRIEVAL_DOCUMENT")
         firestore.save_to_collection("mars", embedding)
 
 

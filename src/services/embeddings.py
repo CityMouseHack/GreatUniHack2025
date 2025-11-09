@@ -18,7 +18,7 @@ client = genai.Client()
 # location, vector
 
 
-class Embedder:
+class Gemini:
     def __init__(self, model_name: str):
         self.model_name = model_name
         self.client = genai.Client()
@@ -33,19 +33,34 @@ class Embedder:
             model=self.model_name,
             contents=contents,
             config=types.EmbedContentConfig(task_type=task_type, output_dimensionality=OUTPUT_DIM))
-            return response.embeddings[0].values
         except:
             raise Exception("Error embedding content")
+
+        return response.embeddings[0].values
+    
+    def generate_response(self, prompt):
+        try:
+            final_response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            )
+        except ValueError as e:
+            raise Exception(f"Error generating response: {e}")
+
+        return final_response.text
+
+
 
 class Firestore:
     def __init__(self):
         self.db = firestore.client()
     
-    def save_to_collection(self, collection_name, embedding):
+    def save_to_collection(self, collection_name, embedding, texts):
         """Save vector embedding to Firestore"""
         doc = {
             "location": collection_name,
             "embedding_field": Vector(embedding), 
+            "text_content": texts
         }
         collection = self.db.collection(COLLECTION_NAME)
         collection.add(doc)
@@ -63,40 +78,41 @@ class Firestore:
         # compare using cosine distance measure
         nearest = query.find_nearest(vector_field="embedding_field", query_vector=query_vector, limit=20, distance_measure=DistanceMeasure.COSINE).get()
         return [doc.to_dict() for doc in nearest]
+    
+    def generate_prompt(self, gemini, location) -> str:
+        """
+        TODO: Split this
+        Method for generating a full prompt for recommendations on planets
+        """
+        query = f"Where can I eat on {location}?"
+        # Create query embedding
+        embedding_response = gemini.embed_content(query, "RETRIEVAL_QUERY")
+        # Find similar from outbound messages of the location
+        similar = self.query_by_location(location, embedding_response)
+        retrieved_context = "\n".join("".join(doc.get("text_content","")) for doc in similar)
+        prompt = f"""
+    Answer the following question based only on the provided context.
 
+    Context:
+    {retrieved_context}
+
+    Question:
+    {query}
+    """
+        return prompt
 
 
 # if __name__ == "__main__":
-
-# TESTING
-#     texts = ["Mars is a really beautiful planet", "Mars has lots of trees on it's surface"]
-
-#     embed = Embedder("gemini-embedding-001")
-#     embedding = embed.embed_content(texts, "RETRIEVAL_DOCUMENT")
-#     store = Firestore(cred)
-#     store.save_to_collection("mars", embedding)
-
-#     db = firestore.client()
-#     user_query = "What is the surface of Mars like?" 
-
-#     embedding_response = embed.embed_content(user_query, "RETRIEVAL_QUERY")
+#     try:
+#         app = firebase_admin.get_app()
+#     except ValueError as e:
+#         cred = credentials.Certificate('/home/george/GreatUniHack/GreatUniHack2025/src/services/space-mouse-4803e-firebase-adminsdk-fbsvc-98226ecde3.json')
+#         firebase_admin.initialize_app(cred)
     
-#     similar = store.query_by_location("mars", embedding_response)
+#     texts = ["I think you can eat ice cream on mars"]
+#     gemini = Gemini("gemini-embedding-001")
+#     embedding = gemini.embed_content(texts, "RETRIEVAL_DOCUMENT")
+#     store = Firestore()
+#     store.save_to_collection("mars", embedding, texts)
 
-#     retrieved_context = "\n".join(doc.get("text_content","") for doc in similar)
-#     print(retrieved_context)
-#     prompt = f"""
-# Answer the following question based only on the provided context.
-
-# Context:
-# {retrieved_context}
-
-# Question:
-# {user_query}
-# """
-#     final_response = client.models.generate_content(
-#     model="gemini-2.5-flash",
-#     contents=prompt,
-#     )
-#     print(final_response.text)
-    
+#     print(gemini.generate_response(store.generate_prompt(gemini, "mars")))

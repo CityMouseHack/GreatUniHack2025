@@ -31,5 +31,5 @@ login_manager.login_view = 'login'
 
 socketio = SocketIO(app, manage_session=False)
 
-embedder = embeddings.Embedder("gemini-embedding-001")
+gemini = embeddings.Gemini("gemini-embedding-001")
 firestore = embeddings.Firestore()
