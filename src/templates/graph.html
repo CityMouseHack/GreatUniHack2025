@@ -1,21 +1,17 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Visualization</title>
-</head> -->
-<!-- <body> -->
 {% extends "base.html" %}
 
 {% block content %}
     <style>
-        /* body { background-color: #111; color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: Arial, sans-serif; } */
+        /* This style block can be inside or outside the block content, but here is fine. */
         canvas { background-color: #000; border: 1px solid #444; }
-        p { margin-top: 20px; }
+        p { margin-top: 20px; text-align: center; }
     </style>
+    
     <canvas id="visualizationCanvas" width="800" height="600"></canvas>
-    <p>Hover over a planet to learn more.</p>
+    <p>Hover over a planet to learn more. Click the background to regenerate the layout.</p>
+
+    <!-- Include the Socket.IO client library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -23,12 +19,29 @@
             const canvas = document.getElementById('visualizationCanvas');
             const ctx = canvas.getContext('2d');
 
+            // --- WEBSOCKET SETUP ---
+            const socket = io.connect('http://' + document.domain + ':' + location.port);
+
+            socket.on('connect', function() {
+                // Tell the server this client is viewing the graph
+                socket.emit('join_graph');
+            });
+
+            window.onbeforeunload = function() {
+                // Tell the server this client is leaving the graph page
+                socket.emit('leave_graph');
+            };
+
             // --- 2. DATA LOADING ---
             let data;
-            try { data = JSON.parse('{{ chart_data|safe }}'); }
+            try {
+                data = JSON.parse('{{ chart_data|safe }}');
+            }
             catch (e) {
                 console.error("Failed to parse data from Flask:", e);
-                ctx.fillStyle = 'red'; ctx.font = '20px Arial'; ctx.textAlign = 'center';
+                ctx.fillStyle = 'red';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
                 ctx.fillText('Error: Could not load data.', canvas.width / 2, canvas.height / 2);
                 return;
             }
@@ -51,6 +64,7 @@
             let points = [];
             let stars = [];
             let comet = {};
+            let pulses = []; // Array to hold the green message "blobs"
 
             // --- 4. FUNCTIONS ---
 
@@ -98,6 +112,7 @@
             }
 
             function drawComet() {
+                if (!comet.x) return;
                 comet.x += comet.dx;
                 comet.y += comet.dy;
                 comet.tail.unshift({ x: comet.x, y: comet.y });
@@ -127,6 +142,52 @@
             function getDistance(p1, p2) {
                 return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
             }
+            
+            // --- NEW: Functions for the message activity blobs ---
+            function createPulse(senderLocation, receiverLocation) {
+                const startPlanet = points.find(p => p.name.toLowerCase() === senderLocation);
+                const endPlanet = points.find(p => p.name.toLowerCase() === receiverLocation);
+
+                if (startPlanet && endPlanet) {
+                    pulses.push({
+                        startX: startPlanet.x,
+                        startY: startPlanet.y,
+                        endX: endPlanet.x,
+                        endY: endPlanet.y,
+                        progress: 0,
+                        speed: 0.01 // Adjust speed of the blob
+                    });
+                }
+            }
+
+            function updateAndDrawPulses() {
+                for (let i = pulses.length - 1; i >= 0; i--) {
+                    const p = pulses[i];
+                    p.progress += p.speed;
+
+                    if (p.progress >= 1) {
+                        pulses.splice(i, 1);
+                        continue;
+                    }
+
+                    const currentX = p.startX + (p.endX - p.startX) * p.progress;
+                    const currentY = p.startY + (p.endY - p.startY) * p.progress;
+
+                    ctx.save();
+                    const pulseRadius = 7;
+                    const gradient = ctx.createRadialGradient(currentX, currentY, 0, currentX, currentY, pulseRadius);
+                    gradient.addColorStop(0, 'rgba(144, 238, 144, 1)');   // LightGreen center
+                    gradient.addColorStop(0.7, 'rgba(60, 179, 113, 0.5)'); // MediumSeaGreen
+                    gradient.addColorStop(1, 'rgba(46, 139, 87, 0)');     // SeaGreen transparent
+                    
+                    ctx.beginPath();
+                    ctx.arc(currentX, currentY, pulseRadius, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+            // --- End of new functions ---
 
             function generatePointPositions() {
                 points = [];
@@ -309,6 +370,7 @@
                 drawStars();
                 drawComet();
                 drawConnections();
+                updateAndDrawPulses(); // Draw the message blobs each frame
                 drawPoints();
                 drawMoons();
                 drawHoverEffect();
@@ -346,6 +408,12 @@
             generatePointPositions();
             animate();
 
+            // --- NEW: WebSocket listener for message activity ---
+            socket.on('new_message_activity', function(data) {
+                console.log('New message activity received:', data);
+                createPulse(data.sender_location, data.receiver_location);
+            });
+            
             function handleMouseMove(e) {
                 const rect = canvas.getBoundingClientRect();
                 const mouseX = e.clientX - rect.left;
@@ -366,11 +434,9 @@
                 lastHoveredPlanet = hoveredPlanet;
             }
 
-            canvas.addEventListener('click', generatePointPositions); // Keep click to regenerate layout
+            canvas.addEventListener('click', generatePointPositions);
             canvas.addEventListener('mousemove', handleMouseMove);
         });
     </script>
 
 {% endblock %}
-<!-- </body> -->
-<!-- </html> -->

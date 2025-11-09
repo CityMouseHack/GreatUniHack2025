@@ -222,8 +222,47 @@ def graph():
         else:
             location_dict[loc] = 1
     
+    # colors = ["#D2691E", "#FF69B4", "#1E90FF", "#32CD32"]
 
-    colors = ["#D2691E", "#FF69B4", "#1E90FF", "#32CD32"]
+    colors = [
+        # --- Palette 1: Solar System Inspired ---
+        "#97979F",  # Mercury (Rocky Gray)
+        "#C3A171",  # Venus (Sulphuric Gold)
+        "#4A90E2",  # Earth (Ocean Blue)
+        "#3B5D38",  # Earth (Forest Green)
+        "#A44322",  # Mars (Dusty Red)
+        "#D39C7E",  # Jupiter (Stormy Bands)
+        "#A49B72",  # Saturn (Pale Gold)
+        "#9CCEDC",  # Uranus (Misty Cyan)
+        "#054569",  # Neptune (Deep Blue)
+
+        # --- Palette 2: Vibrant Sci-Fi ---
+        "#FF69B4",  # Cyberpunk Pink
+        "#00E5FF",  # Holographic Blue
+        "#FF5B29",  # Giants Orange
+        "#8A2BE2",  # Warp-Speed Purple
+        "#3AD29F",  # Android Green
+        "#FFDA24",  # Banana Yellow
+        "#FF2F92",  # Unicorn Dust Pink
+
+        # --- Palette 3: Gas Giant & Nebula Hues ---
+        "#430D4B",  # Orion Nebula Purple
+        "#081448",  # Galactic Forest Blue
+        "#E6E6FA",  # Cosmic Lavender
+        "#C72075",  # Magenta Dye
+        "#1D1135",  # Deep Space Violet
+        "#50F2CE",  # Turquoise Swirl
+        "#9AEADD",  # Stardust Teal
+
+        # --- Palette 4: Alien Worlds & Exoplanets ---
+        "#76101E",  # Ruby Red Desert
+        "#014760",  # Methane Sea Blue
+        "#FFD700",  # Golden Supernova
+        "#C874B2",  # Iridescent Lilac
+        "#FF4500",  # Volcanic Orange
+        "#A1CE3F",  # Acidic Green
+        "#78CCe2",  # Crystal Spires Cyan
+    ]
 
     data = [
         {"name": key, "size": location_dict[key], "color":random.choice(colors)} for key in location_dict
@@ -287,6 +326,74 @@ def on_join(data):
 def on_leave(data):
     room = data['room']
     leave_room(room)
+
+# ### NEW SOCKET.IO HANDLERS FOR THE GRAPH PAGE ###
+@socketio.on('join_graph')
+def on_join_graph():
+    """Adds the client to a room for graph viewers."""
+    join_room('graph_viewers')
+
+@socketio.on('leave_graph')
+def on_leave_graph():
+    """Removes the client from the graph viewers room."""
+    leave_room('graph_viewers')
+
+
+@socketio.on('send_message')
+def handle_send_message_event(data):
+    """
+    Handles a client sending a message. Saves it to Firebase and broadcasts it.
+    NOW ALSO broadcasts an activity event to the graph.
+    """
+    app.logger.info(f"Received message: {data}")
+
+    conversation_id = data['conversation_id']
+    message_content = data['message']
+    sender_username = session['user']
+
+    # Create the new message object
+    new_message = {
+        "content": message_content, 
+        "sender_id": sender_username, 
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+    # Save to Firebase
+    chats_ref = fbdb.reference("chats/" + conversation_id)
+    chats_ref.push(new_message)
+
+    # Convert to vector embedding and save to Firestore
+    sender_location_data = fbdb.reference(f"users/{sender_username}/location").get()
+    if sender_location_data:
+        embedding = gemini.embed_content(message_content, "RETRIEVAL_DOCUMENT")
+        firestore.save_to_collection(sender_location_data, embedding, message_content)
+
+    # Broadcast the chat message to the chat room
+    socketio.emit('new_message', new_message, room=conversation_id)
+
+    # --- NEW: BROADCAST ACTIVITY TO THE GRAPH ---
+    # 1. Find the receiver
+    conversations_data = get_as_list("conversations")
+    receiver_username = None
+    for conv in conversations_data:
+        if conv.get("id") == conversation_id:
+            if conv.get("user1") == sender_username:
+                receiver_username = conv.get("user2")
+            else:
+                receiver_username = conv.get("user1")
+            break
+    
+    # 2. Get receiver's location
+    if receiver_username:
+        receiver_location_data = fbdb.reference(f"users/{receiver_username}/location").get()
+        
+        # 3. If both locations exist, emit the event to the graph viewers
+        if sender_location_data and receiver_location_data and sender_location_data.lower() != receiver_location_data.lower():
+            activity_data = {
+                'sender_location': sender_location_data.lower(),
+                'receiver_location': receiver_location_data.lower()
+            }
+            socketio.emit('new_message_activity', activity_data, room='graph_viewers')
 
 def get_as_list(path):
     data = fbdb.reference(path).get()
