@@ -265,7 +265,11 @@ def graph():
     ]
 
     data = [
-        {"name": key, "size": location_dict[key], "color":random.choice(colors)} for key in location_dict
+        {
+            "name": key,
+            "size": location_dict[key] * 20, # Multiplier to make planets bigger
+            "color": "#%06x" % random.randint(0, 0xFFFFFF) # Assign a random color
+        } for key in location_dict
     ]
 
     print(data)
