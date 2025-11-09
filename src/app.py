@@ -216,7 +216,7 @@ def graph():
     location_dict = {}
 
     for i in get_as_list("users"):
-        loc = i["location"].capitalize()
+        loc = i["location"].lower()
         if loc in location_dict:
             location_dict[loc] += 1
         else:
