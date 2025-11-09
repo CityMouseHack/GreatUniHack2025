@@ -276,7 +276,8 @@
                     }
                     ctx.fillStyle = '#fff'; ctx.font = '16px Arial'; ctx.textAlign = 'center';
                     ctx.shadowColor = 'black'; ctx.shadowBlur = 5;
-                    ctx.fillText(point.name, point.x, point.y - pointRadius - 12);
+                    
+                    ctx.fillText(String(point.name).charAt(0).toUpperCase() + String(point.name).slice(1), point.x, point.y - pointRadius - 12);
                     ctx.shadowBlur = 0;
                 });
             }
