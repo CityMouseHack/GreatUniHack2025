@@ -216,25 +216,27 @@ def graph():
     location_dict = {}
 
     for i in get_as_list("users"):
-        loc = i["location"]
+        loc = i["location"].capitalize()
         if loc in location_dict:
             location_dict[loc] += 1
         else:
             location_dict[loc] = 1
     
 
-    # colours = ["#D2691E", "#FF69B4", "#1E90FF", "#32CD32"]
-
-    # data = [
-    #     {"name": key, "size": location_dict[key], "colour":random.choice(colours)} for key in location_dict
-    # ]
+    colors = ["#D2691E", "#FF69B4", "#1E90FF", "#32CD32"]
 
     data = [
-        {"name": "india", "color": "#D2691E"},
-        {"name": "Germany", "color": "#FF69B4"},
-        {"name": "Brazil", "color": "#1E90FF"},
-        {"name": "Peru", "color": "#32CD32"}
+        {"name": key, "size": location_dict[key], "color":random.choice(colors)} for key in location_dict
     ]
+
+    print(data)
+
+    # data = [
+        # {"name": "india", "color": "#D2691E"},
+        # {"name": "Germany", "color": "#FF69B4"},
+        # {"name": "Brazil", "color": "#1E90FF"},
+        # {"name": "Peru", "color": "#32CD32"}
+    # ]
 
     return render_template('graph.html', chart_data=json.dumps(data))
 
