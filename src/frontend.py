@@ -133,7 +133,7 @@ def chat(username):
 
         # save message as a vector embedding
         embedding = gemini.embed_content(form.message.data, "RETRIEVAL_DOCUMENT")
-        firestore.save_to_collection("mars", embedding)
+        firestore.save_to_collection("mars", embedding, form.message.data)
 
 
 
