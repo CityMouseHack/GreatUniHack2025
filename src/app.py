@@ -286,7 +286,7 @@ def graph():
 @app.route('/hover/<name>', methods=["GET"])
 def handle_hover_planet_event(name):
     location = name
-    response = gemini.generate_response(firestore.generate_prompt(gemini, location))
+    response = gemini.generate_response(firestore.generate_prompt(gemini, location.lower()))
     return jsonify({'response': response})
 
 
@@ -315,7 +315,7 @@ def handle_send_message_event(data):
     # Convert to vector embedding and save to Firestore
     location = fbdb.reference("users/" + sender).get().get("location") 
     embedding = gemini.embed_content(message_content, "RETRIEVAL_DOCUMENT")
-    firestore.save_to_collection(location, embedding, message_content)
+    firestore.save_to_collection(location.lower(), embedding, message_content) 
 
     # Broadcast the message to all clients in the room (including the sender)
     socketio.emit('new_message', new_message, room=conversation_id)
